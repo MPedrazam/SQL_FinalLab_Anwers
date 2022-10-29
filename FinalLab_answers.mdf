@@ -1,3 +1,5 @@
+PART 1.
+
 1. List  the names of the cities in alphabetical order where Classic Models has offices.
 
 SELECT DISTINCT city
@@ -72,12 +74,80 @@ SELECT ProductName
 11. List the month name and the total number of orders for the month in 2004 in which ClassicModels customers placed the most orders.
 
 SELECT MonthName(OrderDate) as OrderMonth  , COUNT(OrderNumber)
-		FROM  "alanparadise/cm"."orders" 
-		where extract(year from orderdate) = '2004' group by ordermonth 
-order by 1 desc limit 1;
+	FROM  "alanparadise/cm"."orders" 
+	WHERE EXTRACT(year from OrderDate) = '2004'
+GROUP BY OrderMonth 
+ORDER BY 1 DESC Limit 1;
 
 12. List the firstname, lastname of employees who are Sales Reps who have no assigned customers.  
 
+SELECT LastName, FirstName 
+	FROM "alanparadise/cm"."employees" Left Outer JOIN "alanparadise/cm"."customers" 
+		ON "alanparadise/cm"."employees".employeenumber = "alanparadise/cm"."customers" .salesrepemployeenumber
+	WHERE CustomerName ISNULL  
+		and jobtitle = "Sales Rep";
+
 13. List the customername of customers from Switzerland with no orders. 
 
+SELECT CustomerName, Country
+	FROM "alanparadise/cm"."customers"  Left Outer JOIN "alanparadise/cm"."orders"
+		ON "alanparadise/cm"."customers".customernumber = "alanparadise/cm"."orders".customernumber
+	WHERE "alanparadise/cm"."orders".customernumber ISNULL and Country = 'Switzerland';
+
 14. List the customername and total quantity of products ordered for customers who have ordered more than 1650 products across all their orders.
+
+SELECT CustomerName, SUM(QuantityOrdered) as Totalq
+	FROM "alanparadise/cm"."customers" JOIN  "alanparadise/cm"."orders"
+		ON "alanparadise/cm"."customers".CustomerNumber = "alanparadise/cm"."orders".CustomerNumber
+         	JOIN "alanparadise/cm"."orderdetails" 
+			ON "alanparadise/cm"."customers".OrderNumber = "alanparadise/cm"."orderdetails".ordernumber 
+	GROUP BY Customername
+		HAVING Totalq > 1650;
+		
+PART 2
+
+1. Create a NEW table named “TopCustomers” with three columns: CustomerNumber (integer), ContactDate (DATE) and  OrderTotal (a real number.)  None of these columns can be NULL.
+
+CREATE TABLE TopCustomers ( 
+ 		CustomerNumber  int not null,  
+		ContactDate	DATE not null,
+		OrderTotal	decimal(9,2) not null default 0, 
+		constraint	PKTopCustomers primary key (CustomerNumber) 
+ 		);
+
+2. Populate the new table “TopCustomers” with the CustomerNumber, today’s date, and the total value of all their orders (PriceEach * quantityOrdered) for those customers whose order total value is greater than $140,000.
+
+INSERT INTO TopCustomers 
+	SELECT TopCustomers.CustomerNumber, CURRENT_date,
+		SUM(PriceEach * Quantityordered) 
+ 	   	FROM Customers c, Orders o, OrderDetails d  	 	
+		WEHERE c.CustomerNumber = o.CustomerNumber AND o.Ordernumber = d.Ordernumber 
+ 	GROUP BT c.Customernumber
+		HAVING SUM(PriceEach * Quantityordered) > 140000;
+
+3. List the contents of the TopCustomers table in descending OrderTotal sequence.
+	
+SELECT *
+	FROM TopCustomers
+	ODER BY OrderTotal DESC; 
+
+4. Add a new column to the TopCustomers table called OrderCount.
+
+ALTER TABLE TopCustomers
+	ADD Column OrderCount integer; 
+
+
+5. Update the Top Customers table, setting the OrderCount to a random number between 1 and 10.
+
+UPDATE TopCustomers
+	SET OrderCount = floor((rand()*18));
+
+6. List the contents of the TopCustomers table in descending OrderCount sequence.
+
+SELECT * 
+	FROM TopCustomers 
+	ORDER BY OrderCount DESC;
+
+7. Drop the TopCustomers table.
+
+DROP TABLE TopCustomers; 
